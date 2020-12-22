@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace WindowsServiceTest1.Service
@@ -12,7 +13,7 @@ namespace WindowsServiceTest1.Service
     {
         private FileSystemWatcher _watcher;
         private static readonly Watcher instance = new Watcher();
-        private EventLog eventLog;
+        private EventLog eventLog = new EventLog();
         private FileSystemWatcher watcher
         {
             get => _watcher;
@@ -39,9 +40,11 @@ namespace WindowsServiceTest1.Service
 
         internal void LogEventStart()
         {
-            eventLog = new EventLog();
+            try
+            {
+                System.Diagnostics.EventLog.DeleteEventSource("MultiSys");
 
-            if (!EventLog.SourceExists("MultiSys"))
+                if (!EventLog.SourceExists("MultiSys"))
             {
                 EventLog.CreateEventSource("MultiSys", "MultiSysServiceLog");
             }       
@@ -50,8 +53,7 @@ namespace WindowsServiceTest1.Service
 
             eventLog.Log = "MultiSysServiceLog";
 
-            try
-            {
+ 
                 eventLog.WriteEntry("Start Multisys.", EventLogEntryType.SuccessAudit, 100);
             }
             catch (Exception e) {
@@ -76,13 +78,23 @@ namespace WindowsServiceTest1.Service
             string dest = Path.Combine(@"C:\Users\ASUS\MultiSys\dist", e.Name);
             try
             {
+                FileInfo fileInfo = new FileInfo(dest);
                 if (File.Exists(dest))
                 {
                     File.Delete(e.FullPath);
                 }
                 else
                 {
+                    WriteToFile("In ELSE");
+                    //while (IsFileLocked(fileInfo))
+                    //{
+                    //    WriteToFile("In WHILE");
+                    //    Thread.Sleep(500);
+                    //}
+                    WriteToFile("BEFORE MOVE");
                     File.Move(e.FullPath, dest);
+                    WriteToFile("AFTER MOVE");
+
                 }
             }
             catch (Exception ex) { WriteToFile(ex.Message); }
@@ -95,7 +107,7 @@ namespace WindowsServiceTest1.Service
             {
                 Path = path,
                 NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
-                                   | NotifyFilters.FileName | NotifyFilters.DirectoryName,
+                                   | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.Size,
                 Filter = "*.*"
             };
             watcher.Changed += new FileSystemEventHandler(OnChanged);
@@ -137,9 +149,36 @@ namespace WindowsServiceTest1.Service
 
         }
 
-        public override string ToString()
+        //public override string ToString()
+        //{
+        //    return $"{{{nameof(Instance)}={Instance}}}";
+        //}
+        bool IsFileLocked(FileInfo file)
         {
-            return $"{{{nameof(Instance)}={Instance}}}";
+            FileStream stream = null;
+
+            try
+            {
+                stream = file.Open(FileMode.Open,
+                         FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+                return true;
+            }
+            finally
+            {
+                if (stream != null)
+                    stream.Close();
+            }
+
+            //file is not locked
+            return false;
         }
+
     }
 }
