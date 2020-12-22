@@ -42,21 +42,21 @@ namespace WindowsServiceTest1.Service
         {
             try
             {
-                System.Diagnostics.EventLog.DeleteEventSource("MultiSys");
 
                 if (!EventLog.SourceExists("MultiSys"))
-            {
-                EventLog.CreateEventSource("MultiSys", "MultiSysServiceLog");
-            }       
+                {
+                    EventLog.CreateEventSource("MultiSys", "");
+                }
 
-            eventLog.Source = "MultiSys";
+                eventLog.Source = "MultiSys";
 
-            eventLog.Log = "MultiSysServiceLog";
+                //eventLog.Log = "MultiSysServiceLog";
 
- 
+
                 eventLog.WriteEntry("Start Multisys.", EventLogEntryType.SuccessAudit, 100);
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
 
                 WriteToFile(e.Message);
             }
@@ -74,7 +74,7 @@ namespace WindowsServiceTest1.Service
         private void OnChanged(object source, FileSystemEventArgs e)
         {
             eventLog.WriteEntry("OnChanged", EventLogEntryType.Information, 100);
-            eventLog.WriteEntry("e.file " +e.FullPath, EventLogEntryType.Information, 100);
+            eventLog.WriteEntry("e.file " + e.FullPath, EventLogEntryType.Information, 100);
             string dest = Path.Combine(@"C:\Users\ASUS\MultiSys\dist", e.Name);
             try
             {
@@ -85,21 +85,14 @@ namespace WindowsServiceTest1.Service
                 }
                 else
                 {
-                    WriteToFile("In ELSE");
-                    //while (IsFileLocked(fileInfo))
-                    //{
-                    //    WriteToFile("In WHILE");
-                    //    Thread.Sleep(500);
-                    //}
-                    WriteToFile("BEFORE MOVE");
+
                     File.Move(e.FullPath, dest);
-                    WriteToFile("AFTER MOVE");
 
                 }
             }
             catch (Exception ex) { WriteToFile(ex.Message); }
 
-           
+
         }
         public Watcher GetWatcherForDirectory(String path)
         {
@@ -112,7 +105,7 @@ namespace WindowsServiceTest1.Service
             };
             watcher.Changed += new FileSystemEventHandler(OnChanged);
             watcher.EnableRaisingEvents = true;
-           
+
             //Watcher temp= new Watcher(watcher);
             //temp.eventLog = new EventLog();
             //WriteToFile(temp.eventLog.ToString());
@@ -153,32 +146,32 @@ namespace WindowsServiceTest1.Service
         //{
         //    return $"{{{nameof(Instance)}={Instance}}}";
         //}
-        bool IsFileLocked(FileInfo file)
-        {
-            FileStream stream = null;
+        //bool IsFileLocked(FileInfo file)
+        //{
+        //    FileStream stream = null;
 
-            try
-            {
-                stream = file.Open(FileMode.Open,
-                         FileAccess.ReadWrite, FileShare.None);
-            }
-            catch (IOException)
-            {
-                //the file is unavailable because it is:
-                //still being written to
-                //or being processed by another thread
-                //or does not exist (has already been processed)
-                return true;
-            }
-            finally
-            {
-                if (stream != null)
-                    stream.Close();
-            }
+        //    try
+        //    {
+        //        stream = file.Open(FileMode.Open,
+        //                 FileAccess.ReadWrite, FileShare.None);
+        //    }
+        //    catch (IOException)
+        //    {
+        //        //the file is unavailable because it is:
+        //        //still being written to
+        //        //or being processed by another thread
+        //        //or does not exist (has already been processed)
+        //        return true;
+        //    }
+        //    finally
+        //    {
+        //        if (stream != null)
+        //            stream.Close();
+        //    }
 
-            //file is not locked
-            return false;
-        }
+        //    //file is not locked
+        //    return false;
+        //}
 
     }
 }
