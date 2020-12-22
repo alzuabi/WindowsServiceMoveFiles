@@ -24,12 +24,15 @@ namespace WindowsServiceMoveFiles
         protected override void OnStart(string[] args)
         {
             fWatcher.WriteToFile("Service is started at " + DateTime.Now);
+            fWatcher.LogEventStart();
+            fWatcher.WriteToFile("After Service is started at " + DateTime.Now);
             fWatcher.GetWatcherForDirectory(@"C:\Users\ASUS\MultiSys\source");
         }
 
         protected override void OnStop()
         {
             fWatcher.WriteToFile("Service is stopped at " + DateTime.Now);
+            fWatcher.LogEventSTop();
         }
     }
 }

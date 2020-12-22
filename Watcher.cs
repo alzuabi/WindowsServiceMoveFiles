@@ -11,9 +11,8 @@ namespace WindowsServiceTest1.Service
     class Watcher : IDisposable
     {
         private FileSystemWatcher _watcher;
-        EventLog eventLog;
         private static readonly Watcher instance = new Watcher();
-
+        private EventLog eventLog;
         private FileSystemWatcher watcher
         {
             get => _watcher;
@@ -41,26 +40,38 @@ namespace WindowsServiceTest1.Service
         internal void LogEventStart()
         {
             if (!EventLog.SourceExists("MultiSys"))
-
             {
-                EventLog.CreateEventSource("MultiSys", "MyNewLog");
-
+                WriteToFile("IN EventLog.SourceExists");
+                //An event log source should not be created and immediately used.
+                //There is a latency time to enable the source, it should be created
+                //prior to executing the application that uses the source.
+                //Execute this sample a second time to use the new source.
+                EventLog.CreateEventSource("MultiSys", "MultiSysServiceLog");
             }
-
+            //WriteToFile("OUT EventLog.SourceExists");
             // Create an EventLog instance and assign its source.
 
+            WriteToFile(" Create an EventLog instance");
             eventLog = new EventLog();
-
-            // Setting the source
-            eventLog.Log = "MyNewLog";
 
             eventLog.Source = "MultiSys";
 
-
+            eventLog.Log = "MultiSysServiceLog";
 
             // Write an entry to the event log.
+            //WriteToFile("Write an entry to the event log");
+            WriteToFile(eventLog.MachineName);
+            WriteToFile(eventLog.Source);
+            WriteToFile(eventLog.Log);
+            try
+            {
+                eventLog.WriteEntry("Start Multisys.", EventLogEntryType.SuccessAudit, 100);
+            }
+            catch (Exception e) {
 
-            eventLog.WriteEntry("Start Multisys.", EventLogEntryType.SuccessAudit, 100);
+                WriteToFile(e.Message);
+            }
+            WriteToFile("Afetr Write an entry to the event log");
 
         }
 
@@ -77,17 +88,24 @@ namespace WindowsServiceTest1.Service
 
         private void OnChanged(object source, FileSystemEventArgs e)
         {
+            WriteToFile(source.ToString());
+            WriteToFile(e.ToString());
+
             eventLog.WriteEntry("OnChanged", EventLogEntryType.Information, 100);
             eventLog.WriteEntry("e.file " +e.FullPath, EventLogEntryType.Information, 100);
-            string dest = Path.Combine(@"C:\Users\ASUS\dist", e.Name);
-            if (File.Exists(dest))
+            string dest = Path.Combine(@"C:\Users\ASUS\MultiSys\dist", e.Name);
+            try
             {
-                File.Delete(e.FullPath);
+                if (File.Exists(dest))
+                {
+                    File.Delete(e.FullPath);
+                }
+                else
+                {
+                    File.Move(e.FullPath, dest);
+                }
             }
-            else
-            {
-                File.Move(e.FullPath, dest);
-            }
+            catch (Exception ex) { WriteToFile(ex.Message); }
 
             //eventLog.Source = "MultiSys";
 
@@ -108,7 +126,12 @@ namespace WindowsServiceTest1.Service
             };
             watcher.Changed += new FileSystemEventHandler(OnChanged);
             watcher.EnableRaisingEvents = true;
-            return new Watcher(watcher);
+            WriteToFile(watcher.ToString());
+            
+            Watcher temp= new Watcher(watcher);
+            temp.eventLog = new EventLog();
+            WriteToFile(temp.eventLog.ToString());
+            return temp;
         }
 
         public void WriteToFile(string Message)
@@ -141,6 +164,9 @@ namespace WindowsServiceTest1.Service
 
         }
 
-
+        public override string ToString()
+        {
+            return $"{{{nameof(Instance)}={Instance}}}";
+        }
     }
 }
