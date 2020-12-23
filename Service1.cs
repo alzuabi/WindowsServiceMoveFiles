@@ -8,7 +8,6 @@ using System.Linq;
 using System.ServiceProcess;
 using System.Text;
 using System.Threading.Tasks;
-using WindowsServiceTest1.Service;
 
 namespace WindowsServiceMoveFiles
 {
@@ -25,7 +24,6 @@ namespace WindowsServiceMoveFiles
         {
             fWatcher.WriteToFile("Service is started at " + DateTime.Now);
             fWatcher.LogEventStart();
-            fWatcher.WriteToFile("After Service is started at " + DateTime.Now);
             fWatcher.GetWatcherForDirectory(@"C:\Users\ASUS\MultiSys\source");
         }
 

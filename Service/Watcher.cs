@@ -6,8 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using WindowsServiceMoveFiles.Entity;
 
-namespace WindowsServiceTest1.Service
+namespace WindowsServiceMoveFiles
 {
     class Watcher : IDisposable
     {
@@ -73,6 +74,7 @@ namespace WindowsServiceTest1.Service
 
         private void OnChanged(object source, FileSystemEventArgs e)
         {
+            WriteToFile("OnChanged at " + DateTime.Now);
             eventLog.WriteEntry("OnChanged", EventLogEntryType.Information, 100);
             eventLog.WriteEntry("e.file " + e.FullPath, EventLogEntryType.Information, 100);
             string dest = Path.Combine(@"C:\Users\ASUS\MultiSys\dist", e.Name);
@@ -87,12 +89,23 @@ namespace WindowsServiceTest1.Service
                 {
 
                     File.Move(e.FullPath, dest);
-
+                    using (var db = new TestContext())
+                    {
+                        var ev = new Event()
+                        {
+                            eventName = "test",
+                            eventnDesc = e.Name,
+                            eventDate = DateTime.Now
+                        };
+                        db.events.Add(ev);
+                        WriteToFile("events");
+                        db.SaveChanges();
+                    }
                 }
             }
             catch (Exception ex) { WriteToFile(ex.Message); }
 
-
+            WriteToFile("After db");
         }
         public Watcher GetWatcherForDirectory(String path)
         {
