@@ -95,15 +95,10 @@ namespace WindowsServiceMoveFiles
                 eventLog.WriteEntry("OnChanged", EventLogEntryType.Information, 100);
                 eventLog.WriteEntry("e.file " + e.FullPath, EventLogEntryType.Information, 100);
                 string fileName = Path.GetFileNameWithoutExtension(e.Name);
-                WriteToFile("Path.GetFileNameWithoutExtension(e.Name) " + fileName);
                 string dir = Path.Combine(fileName.Split('-'));
-                WriteToFile("Path.Combine(fileName.Split('-')) " + dir);
-                WriteToFile("Dist " + Dest);
                 string dest = Path.Combine(Dest, dir);
-                WriteToFile("Path.Combine(Dist, dir) " + dest);
                 Directory.CreateDirectory(dest);
                 dest = Path.Combine(dest, e.Name);
-                WriteToFile(" Path.Combine(dest, e.Name)  " + dest);
 
                 if (File.Exists(dest))
                 {
