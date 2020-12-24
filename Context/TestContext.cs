@@ -21,7 +21,7 @@ namespace WindowsServiceMoveFiles
             Database.SetInitializer(initializer);
         }
 
-        public DbSet<Event> events { get; set; }
+        public DbSet<Event> Events { get; set; }
     }
 
     public class ModelConfiguration

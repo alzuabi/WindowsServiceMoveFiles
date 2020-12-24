@@ -13,21 +13,36 @@ namespace WindowsServiceMoveFiles
     class Watcher : IDisposable
     {
         private FileSystemWatcher _watcher;
+        private string _dest;
         private static readonly Watcher instance = new Watcher();
-        private EventLog eventLog = new EventLog();
+        private readonly EventLog eventLog = new EventLog();
+        private string Dest 
+        {
+            get => _dest;
+            set => _dest = value;
+        }
         private FileSystemWatcher watcher
         {
             get => _watcher;
             set => _watcher = value;
         }
 
-        private Watcher(FileSystemWatcher watcher) => this._watcher = watcher;
+        private Watcher(FileSystemWatcher watcher, string dist)
+        {
+            _watcher = watcher;
+            _dest = dist;
+        }
 
         private Watcher()
         {
         }
         static Watcher()
         {
+        }
+
+        public Watcher(FileSystemWatcher watcher)
+        {
+           _watcher = watcher;
         }
 
         public static Watcher Instance
@@ -74,20 +89,28 @@ namespace WindowsServiceMoveFiles
 
         private void OnChanged(object source, FileSystemEventArgs e)
         {
-            WriteToFile("OnChanged at " + DateTime.Now);
-            eventLog.WriteEntry("OnChanged", EventLogEntryType.Information, 100);
-            eventLog.WriteEntry("e.file " + e.FullPath, EventLogEntryType.Information, 100);
-            string dest = Path.Combine(@"C:\Users\ASUS\MultiSys\dist", e.Name);
             try
             {
-                FileInfo fileInfo = new FileInfo(dest);
+                WriteToFile("OnChanged at " + DateTime.Now);
+                eventLog.WriteEntry("OnChanged", EventLogEntryType.Information, 100);
+                eventLog.WriteEntry("e.file " + e.FullPath, EventLogEntryType.Information, 100);
+                string fileName = Path.GetFileNameWithoutExtension(e.Name);
+                WriteToFile("Path.GetFileNameWithoutExtension(e.Name) " + fileName);
+                string dir = Path.Combine(fileName.Split('-'));
+                WriteToFile("Path.Combine(fileName.Split('-')) " + dir);
+                WriteToFile("Dist " + Dest);
+                string dest = Path.Combine(Dest, dir);
+                WriteToFile("Path.Combine(Dist, dir) " + dest);
+                Directory.CreateDirectory(dest);
+                dest = Path.Combine(dest, e.Name);
+                WriteToFile(" Path.Combine(dest, e.Name)  " + dest);
+
                 if (File.Exists(dest))
                 {
                     File.Delete(e.FullPath);
                 }
                 else
                 {
-
                     File.Move(e.FullPath, dest);
                     using (var db = new TestContext())
                     {
@@ -97,31 +120,26 @@ namespace WindowsServiceMoveFiles
                             eventnDesc = e.Name,
                             eventDate = DateTime.Now
                         };
-                        db.events.Add(ev);
-                        WriteToFile("events");
+                        db.Events.Add(ev);
                         db.SaveChanges();
                     }
                 }
             }
             catch (Exception ex) { WriteToFile(ex.Message); }
 
-            WriteToFile("After db");
         }
-        public Watcher GetWatcherForDirectory(String path)
+        public Watcher GetWatcherForDirectory(string source, string dist)
         {
             watcher = new FileSystemWatcher
             {
-                Path = path,
+                Path = source,
                 NotifyFilter = NotifyFilters.LastAccess | NotifyFilters.LastWrite
                                    | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.CreationTime | NotifyFilters.Size,
                 Filter = "*.*"
             };
+            Dest = dist;
             watcher.Changed += new FileSystemEventHandler(OnChanged);
             watcher.EnableRaisingEvents = true;
-
-            //Watcher temp= new Watcher(watcher);
-            //temp.eventLog = new EventLog();
-            //WriteToFile(temp.eventLog.ToString());
             return new Watcher(watcher);
         }
 
@@ -132,7 +150,7 @@ namespace WindowsServiceMoveFiles
             {
                 Directory.CreateDirectory(path);
             }
-            string filepath = AppDomain.CurrentDomain.BaseDirectory + "\\Logs\\ServiceLog_" + DateTime.Now.Date.ToShortDateString().Replace('/', '_') + ".txt";
+            string filepath = AppDomain.CurrentDomain.BaseDirectory + "\\Logs\\Files\\ServiceLog_" + DateTime.Now.Date.ToShortDateString().Replace('/', '_') + ".txt";
             if (!File.Exists(filepath))
             {
                 // Create a file to write to.   

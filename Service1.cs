@@ -24,7 +24,7 @@ namespace WindowsServiceMoveFiles
         {
             fWatcher.WriteToFile("Service is started at " + DateTime.Now);
             fWatcher.LogEventStart();
-            fWatcher.GetWatcherForDirectory(@"C:\Users\ASUS\MultiSys\source");
+            fWatcher.GetWatcherForDirectory(@"C:\Users\ASUS\MultiSys\source", @"C:\Users\ASUS\MultiSys\dist");
         }
 
         protected override void OnStop()
